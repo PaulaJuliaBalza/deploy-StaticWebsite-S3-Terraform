@@ -1,0 +1,36 @@
+# Módulo Template files
+# https://registry.terraform.io/modules/hashicorp/dir/template/latest 
+
+module "template_files" {
+    source = "hashicorp/dir/template"
+
+    base_dir = "${path.module}/web-files"
+}
+
+
+
+resource "aws_s3_bucket_website_configuration" "web-config" {
+  bucket = aws_s3_bucket.example-bucket.id
+
+  # Configuration for the index document
+  index_document {
+    suffix = "index.html"
+  }
+}
+
+
+# Recurso objeto para hostear la web 
+
+resource "aws_s3_object" "Bucket_files" {
+  bucket =  aws_s3_bucket.example-bucket.id
+
+  for_each     = module.template_files.files
+  key          = each.key
+  content_type = each.value.content_type
+
+  source  = each.value.source_path
+  content = each.value.content
+
+  # ETag of the S3 object
+  etag = each.value.digests.md5
+}
